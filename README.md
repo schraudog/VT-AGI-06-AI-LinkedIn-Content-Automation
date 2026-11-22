@@ -76,7 +76,8 @@ the configured OpenAI model; do not include sensitive or customer data.
    the appropriate **Post As** option and confirm the account has permission
    to post. See [n8n's LinkedIn node documentation](https://docs.n8n.io/integrations/builtin/app-nodes/n8n-nodes-base.linkedin/).
    Never export credentials or tokens. The node is deliberately unconfigured
-   in the supplied export.
+   and disabled in the supplied export so that dry runs do not require LinkedIn
+   credentials. Enable it only when the live branch is ready and authorized.
 4. Save the workflow. Use manual executions before activating the schedule.
    Set `dryRun=false` only after review and explicit authorization for the
    automated live path. The default threshold of 0.85 is illustrative, not a
@@ -142,7 +143,12 @@ have succeeded and a retry could create a duplicate post.
 
 The automated tests use a mocked model provider and a temporary SQLite database;
 they verify response composition, validation, provider failure, and logging.
-Real OpenAI, Slack, LinkedIn and n8n executions require credentials and an
+The workflow was imported into n8n 2.48.7. For a CLI smoke test, a temporary
+copy used an Execute Workflow trigger and local mock endpoints: the dry run
+completed, logged `review`, and delivered the composed text to mock Slack.
+With the real local service and no API key, execution stopped at the service
+with 503 before logging or delivery. These are not live integration tests.
+Live OpenAI generation and Slack/LinkedIn delivery require credentials and an
 operator's environment. Capture screenshots of the successful service response,
 n8n execution, and Slack review in that environment for submission; no successful
 external integration or screenshots are claimed by this repository.

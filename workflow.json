@@ -111,6 +111,7 @@
       },
       "id": "linkedin",
       "name": "Publish to LinkedIn",
+      "disabled": true,
       "type": "n8n-nodes-base.linkedIn",
       "typeVersion": 1,
       "position": [1320, -100]
