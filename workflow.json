@@ -1,0 +1,147 @@
+{
+  "name": "FinEdge LinkedIn content",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 10
+            }
+          ]
+        }
+      },
+      "id": "schedule",
+      "name": "Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {"id": "name", "name": "name", "value": "FinEdge Mumbai", "type": "string"},
+            {"id": "voice", "name": "voice", "value": "Professional, clear, trustworthy and informative", "type": "string"},
+            {"id": "audience", "name": "audience", "value": "Fintech professionals and business leaders", "type": "string"},
+            {"id": "context", "name": "context", "value": "Discuss an educational perspective on digital payments without making unsupported claims.", "type": "string"},
+            {"id": "threshold", "name": "threshold", "value": 0.85, "type": "number"},
+            {"id": "dryRun", "name": "dryRun", "value": true, "type": "boolean"}
+          ]
+        },
+        "options": {}
+      },
+      "id": "brand",
+      "name": "Brand Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [220, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/linkedin",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({brand: {name: $json.name, voice: $json.voice, audience: $json.audience}, context: $json.context}) }}",
+        "options": {"timeout": 150000}
+      },
+      "id": "service",
+      "name": "AutoGen Microservice",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 0]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {"id": "final", "name": "final_text", "value": "={{ $json.draft + '\\n\\n' + $json.hashtags.join(' ') }}", "type": "string"},
+            {"id": "confidence", "name": "confidence", "value": "={{ $json.confidence }}", "type": "number"},
+            {"id": "route", "name": "route", "value": "={{ $('Brand Config').item.json.dryRun === false && typeof $('Brand Config').item.json.threshold === 'number' && $('Brand Config').item.json.threshold >= 0 && $('Brand Config').item.json.threshold <= 1 && typeof $json.confidence === 'number' && $json.confidence >= $('Brand Config').item.json.threshold && $json.confidence <= 1 ? 'publish' : 'review' }}", "type": "string"}
+          ]
+        },
+        "options": {}
+      },
+      "id": "compose",
+      "name": "Compose Final",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [660, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/runs",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({execution_id: $execution.id, final_text: $json.final_text, confidence: $json.confidence, route: $json.route}) }}",
+        "options": {}
+      },
+      "id": "log",
+      "name": "Log Run",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [880, 0]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2},
+          "conditions": [
+            {"id": "approved", "leftValue": "={{ $('Compose Final').item.json.route }}", "rightValue": "publish", "operator": {"type": "string", "operation": "equals"}}
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "gate",
+      "name": "Approval Gate",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1100, 0]
+    },
+    {
+      "parameters": {
+        "person": "",
+        "text": "={{ $('Compose Final').item.json.final_text }}",
+        "additionalFields": {}
+      },
+      "id": "linkedin",
+      "name": "Publish to LinkedIn",
+      "disabled": true,
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [1320, -100]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://example.invalid/configure-slack-webhook",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({text: 'For human review (confidence ' + $('Compose Final').item.json.confidence + '):\\n\\n' + $('Compose Final').item.json.final_text}) }}",
+        "options": {}
+      },
+      "id": "slack",
+      "name": "Send to Slack Review",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 100]
+    }
+  ],
+  "connections": {
+    "Schedule": {"main": [[{"node": "Brand Config", "type": "main", "index": 0}]]},
+    "Brand Config": {"main": [[{"node": "AutoGen Microservice", "type": "main", "index": 0}]]},
+    "AutoGen Microservice": {"main": [[{"node": "Compose Final", "type": "main", "index": 0}]]},
+    "Compose Final": {"main": [[{"node": "Log Run", "type": "main", "index": 0}]]},
+    "Log Run": {"main": [[{"node": "Approval Gate", "type": "main", "index": 0}]]},
+    "Approval Gate": {"main": [[{"node": "Publish to LinkedIn", "type": "main", "index": 0}], [{"node": "Send to Slack Review", "type": "main", "index": 0}]]}
+  },
+  "settings": {"executionOrder": "v1", "timezone": "Asia/Kolkata", "saveDataErrorExecution": "all", "saveDataSuccessExecution": "all"},
+  "active": false,
+  "pinData": {},
+  "tags": []
+}
