@@ -34,7 +34,7 @@ class Ideas(BaseModel):
 
 class Draft(BaseModel):
     draft: Annotated[str, Field(min_length=1, max_length=2500, strip_whitespace=True)]
-    confidence: Annotated[float, Field(ge=0, le=1, allow_inf_nan=False)]
+    confidence: Annotated[float, Field(strict=True, ge=0, le=1, allow_inf_nan=False)]
 
 
 class Hashtags(BaseModel):
@@ -52,7 +52,7 @@ class RunRecord(BaseModel):
 
     execution_id: Annotated[str, Field(min_length=1, max_length=200)]
     final_text: Annotated[str, Field(min_length=1, max_length=3000)]
-    confidence: Annotated[float, Field(ge=0, le=1, allow_inf_nan=False)]
+    confidence: Annotated[float, Field(strict=True, ge=0, le=1, allow_inf_nan=False)]
     route: Annotated[str, Field(pattern="^(review|publish)$")]
 
 

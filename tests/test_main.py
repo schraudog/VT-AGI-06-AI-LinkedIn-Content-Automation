@@ -38,6 +38,11 @@ class ServiceTests(unittest.TestCase):
         with patch.dict(os.environ, {"OPENAI_API_KEY": ""}):
             self.assertEqual(self.client.post("/linkedin", json=self.request).status_code, 503)
 
+    def test_confidence_rejects_non_numeric_values(self):
+        for value in (True, "1"):
+            with self.subTest(value=value), self.assertRaises(main.ValidationError):
+                main.Draft(draft="A post", confidence=value)
+
     def test_invalid_model_output_stops_generation(self):
         class Response:
             def __enter__(self):
@@ -61,6 +66,7 @@ class ServiceTests(unittest.TestCase):
                       "confidence": 0.8, "route": "review"}
             self.assertEqual(self.client.post("/runs", json=record).status_code, 201)
             self.assertEqual(self.client.post("/runs", json={**record, "confidence": 2}).status_code, 422)
+            self.assertEqual(self.client.post("/runs", json={**record, "confidence": True}).status_code, 422)
             with sqlite3.connect(os.environ["RUNS_DB_PATH"]) as db:
                 self.assertEqual(db.execute("SELECT execution_id, final_text, route FROM runs").fetchall(),
                                  [("123", "Post #Fintech", "review")])

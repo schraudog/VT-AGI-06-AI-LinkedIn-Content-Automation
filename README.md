@@ -28,7 +28,7 @@ the configured OpenAI model; do not include sensitive or customer data.
 
 ## Ubuntu setup
 
-1. Install Python 3.10+ and its venv package, and a Node.js version supported by
+1. Install Python 3.11+ and its venv package, and a Node.js version supported by
    the current [n8n installation instructions](https://docs.n8n.io/hosting/installation/npm/).
    For example, install `python3`, `python3-venv`, and `python3-pip` using apt,
    and install a supported Node.js release using your organization's approved
